@@ -2,316 +2,344 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>给最特别的何婧齐同学</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我们的圣诞回忆录</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
     <style>
-        /* 全局样式重置 */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            /* 尺寸定义 */
+            --cube-size: 260px;
+            --img-height: 220px;
+            --text-height: 40px;
+            --mobile-size: 200px;
+            --mobile-img-height: 170px;
+            --mobile-text-height: 30px;
+            /* 圣诞主题色 */
+            --christmas-red: #d42426;
+            --christmas-green: #165b33;
+            --gold: #ffd700;
         }
 
-        body {
-            background: linear-gradient(135deg, #fce3ec 0%, #ffe6e6 100%);
-            overflow: hidden;
-            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
-            height: 100vh;
-            width: 100vw;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
+            font-family: "Microsoft YaHei", sans-serif;
         }
 
-        /* 背景漂浮粒子画布 */
-        #bgCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
+        /* 背景画布 (雪花+星星) - 层级在树和立方体之间 */
+        #snow-canvas {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; z-index: 5;
             pointer-events: none;
         }
 
-        /* 初始按钮容器 */
-        .start-container {
-            z-index: 100;
-            text-align: center;
-            transition: opacity 0.8s ease;
+        /* 初始蒙层 */
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: white; cursor: pointer; transition: 0.5s;
         }
 
-        /* 心动按钮 */
-        .heart-btn {
-            background: #ff6b81;
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 1.2rem;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(255, 107, 129, 0.4);
-            animation: pulse 1.5s infinite;
-            position: relative;
-            overflow: hidden;
-            font-weight: bold;
-            letter-spacing: 2px;
-        }
-
-        .heart-btn:active {
-            transform: scale(0.95);
-        }
-
-        /* 按钮心跳动画 */
-        @keyframes pulse {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 107, 129, 0.7); }
-            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(255, 107, 129, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 107, 129, 0); }
-        }
-
-        /* 文本气泡样式 */
-        .message-bubble {
+        /* --- 新增：背景装饰层 (动态SVG树) --- */
+        .decorations {
             position: absolute;
-            background: rgba(255, 255, 255, 0.9);
-            color: #ff4757;
-            padding: 8px 12px;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            white-space: nowrap;
-            opacity: 0;
-            transform: scale(0);
-            transition: all 1.5s cubic-bezier(0.25, 0.8, 0.25, 1);
-            z-index: 10;
-            pointer-events: none; /* 让气泡不阻挡点击 */
-            border: 1px solid #ffd1d1;
-        }
-
-        /* 移动到心形时的样式覆盖 */
-        .message-bubble.in-heart {
-            font-size: 0.75rem; /* 字体变小一点以适应形状 */
-            padding: 4px 6px;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 8px;
-            box-shadow: 0 1px 4px rgba(255, 71, 87, 0.2);
-        }
-
-        /* 中央大爱心的跳动效果 */
-        .heart-wrapper {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
+            width: 100%; height: 100%;
             pointer-events: none;
-            display: none; /* 初始隐藏 */
+            z-index: 2; /* 在背景最底层 */
+        }
+
+        /* 树的通用样式 */
+        .tree-container {
+            position: absolute;
+            bottom: 5%; /* 稍微抬高一点 */
+            /* 树变大了 */
+            width: 250px;
+            height: auto;
+            filter: drop-shadow(0 0 15px rgba(22, 91, 51, 0.6));
+            /* 设置旋转中心在底部中间，用于摇摆动画 */
+            transform-origin: bottom center;
+            animation: sway 4s ease-in-out infinite alternate;
+        }
+
+        /* 左右两棵树的个性化位置和动画延迟，看起来更自然 */
+        .tree-left {
+            left: 5%;
+            animation-delay: 0s;
+        }
+        .tree-right {
+            right: 5%;
+            transform: scaleX(-1); /* 镜像翻转，让两棵树对称 */
+            animation-delay: 2s; /* 错开动画时间 */
+        }
+
+        /* 树的摇摆动画 */
+        @keyframes sway {
+            0% { transform: rotate(2deg); }
+            100% { transform: rotate(-2deg); }
+        }
+        /* ------------------------------- */
+
+
+        /* 3D 场景容器 */
+        .scene {
+            position: relative; z-index: 10;
+            width: 100%; height: 100vh;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            perspective: 1000px;
+        }
+
+        /* 立方体本体 */
+        .cube {
+            width: var(--cube-size); height: var(--cube-size);
+            position: relative; transform-style: preserve-3d;
+            transform: rotateX(-20deg) rotateY(20deg);
+            animation: rotateCube 25s infinite linear;
+        }
+
+        @keyframes rotateCube {
+            0% { transform: rotateX(0deg) rotateY(0deg); }
+            100% { transform: rotateX(360deg) rotateY(360deg); }
+        }
+
+        /* cube-face 容器 */
+        .cube-face {
+            position: absolute;
+            width: var(--cube-size); height: var(--cube-size);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 15px var(--christmas-red), 0 0 30px var(--christmas-green);
+            background: #000;
+            display: flex; flex-direction: column;
+        }
+
+        .cube-face img {
+            width: 100%; height: var(--img-height);
+            object-fit: cover; opacity: 0.95;
+        }
+
+        .photo-caption {
+            height: var(--text-height); line-height: var(--text-height);
+            text-align: center; color: white; font-size: 14px;
+            background: rgba(212, 36, 38, 0.85);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            padding: 0 5px; font-weight: bold;
         }
         
-        .heart-beat-anim {
-            animation: heartBeat 1.3s infinite ease-in-out;
-            transform-origin: center center;
-            width: 100%;
-            height: 100%;
+        /* 3D 定位 */
+        .front  { transform: rotateY(0deg) translateZ(calc(var(--cube-size) / 2)); }
+        .back   { transform: rotateY(180deg) translateZ(calc(var(--cube-size) / 2)); }
+        .right  { transform: rotateY(90deg) translateZ(calc(var(--cube-size) / 2)); }
+        .left   { transform: rotateY(-90deg) translateZ(calc(var(--cube-size) / 2)); }
+        .top    { transform: rotateX(90deg) translateZ(calc(var(--cube-size) / 2)); }
+        .bottom { transform: rotateX(-90deg) translateZ(calc(var(--cube-size) / 2)); }
+
+        /* 底部文案 */
+        .lyrics {
+            margin-top: 70px; text-align: center; color: #fff;
+            z-index: 20; line-height: 1.5;
+        }
+        #main-title {
+            font-family: 'Great Vibes', cursive;
+            font-size: 4em; margin: 0; color: var(--christmas-red);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5), 0 0 20px var(--christmas-red);
+        }
+        #sub-text {
+            font-size: 1.1em; margin-top: 10px; color: #eee;
+            text-shadow: 0 0 10px var(--christmas-green);
         }
 
-        @keyframes heartBeat {
-            0% { transform: scale(1); }
-            15% { transform: scale(1.05); }
-            30% { transform: scale(1); }
-            45% { transform: scale(1.05); }
-            60% { transform: scale(1); }
-            100% { transform: scale(1); }
-        }
+        /* 手机端适配 */
+        @media (max-width: 600px) {
+            /* 手机端树稍微小一点 */
+            .tree-container { width: 160px; bottom: 8%; }
+            .tree-left { left: -20px; }
+            .tree-right { right: -20px; }
 
+            #main-title { font-size: 3em; }
+            .cube { width: var(--mobile-size); height: var(--mobile-size); }
+            .cube-face { width: var(--mobile-size); height: var(--mobile-size); }
+            .cube-face img { height: var(--mobile-img-height); }
+            .photo-caption { height: var(--mobile-text-height); line-height: var(--mobile-text-height); font-size: 12px; }
+            .front  { transform: rotateY(0deg) translateZ(calc(var(--mobile-size) / 2)); }
+            .back   { transform: rotateY(180deg) translateZ(calc(var(--mobile-size) / 2)); }
+            .right  { transform: rotateY(90deg) translateZ(calc(var(--mobile-size) / 2)); }
+            .left   { transform: rotateY(-90deg) translateZ(calc(var(--mobile-size) / 2)); }
+            .top    { transform: rotateX(90deg) translateZ(calc(var(--mobile-size) / 2)); }
+            .bottom { transform: rotateX(-90deg) translateZ(calc(var(--mobile-size) / 2)); }
+        }
     </style>
 </head>
 <body>
 
-    <!-- 背景特效画布 -->
-    <canvas id="bgCanvas"></canvas>
-
-    <!-- 启动按钮 -->
-    <div class="start-container" id="startContainer">
-        <button class="heart-btn" onclick="startShow()">点我接收关心 💌</button>
+    <div id="overlay" onclick="startExperience()">
+        <h2 style="font-size: 3em;">🎄✨🎁</h2>
+        <p style="font-size: 1.2em; margin: 20px 0;">亲爱的小齐宝宝，圣诞快乐</p>
+        <p style="font-size: 0.8em; opacity: 0.7; animation: blink 2s infinite;">( 点击屏幕开启专属惊喜 )</p>
     </div>
 
-    <!-- 气泡容器 -->
-    <div class="heart-wrapper" id="heartWrapper">
-        <div class="heart-beat-anim" id="messagesContainer"></div>
+    <canvas id="snow-canvas"></canvas>
+    
+    <div class="decorations">
+        <div class="tree-container tree-left">
+            <svg viewBox="0 0 100 150" xmlns="http://www.w3.org/2000/svg">
+                <rect x="42" y="130" width="16" height="20" fill="#4d2600"/>
+                <polygon points="50,10 10,130 90,130" fill="var(--christmas-green)"/>
+                <polygon points="50,30 20,110 80,110" fill="#1e7b45"/>
+                <polygon points="50,50 30,90 70,90" fill="#269c58"/>
+                <circle cx="30" cy="120" r="4" fill="var(--christmas-red)" />
+                <circle cx="70" cy="115" r="4" fill="var(--gold)" />
+                <circle cx="50" cy="100" r="5" fill="#3498db" />
+                <circle cx="40" cy="80" r="4" fill="var(--gold)" />
+                <circle cx="60" cy="70" r="4" fill="var(--christmas-red)" />
+                <circle cx="50" cy="60" r="3" fill="var(--gold)" />
+                <polygon points="50,5 53,15 63,15 55,22 58,32 50,25 42,32 45,22 37,15 47,15" fill="var(--gold)"/>
+            </svg>
+        </div>
+        <div class="tree-container tree-right">
+             <svg viewBox="0 0 100 150" xmlns="http://www.w3.org/2000/svg">
+                <rect x="42" y="130" width="16" height="20" fill="#4d2600"/>
+                <polygon points="50,10 10,130 90,130" fill="var(--christmas-green)"/>
+                <polygon points="50,30 20,110 80,110" fill="#1e7b45"/>
+                <polygon points="50,50 30,90 70,90" fill="#269c58"/>
+                <circle cx="30" cy="120" r="4" fill="var(--christmas-red)" />
+                <circle cx="70" cy="115" r="4" fill="var(--gold)" />
+                <circle cx="50" cy="100" r="5" fill="#3498db" />
+                <circle cx="40" cy="80" r="4" fill="var(--gold)" />
+                <circle cx="60" cy="70" r="4" fill="var(--christmas-red)" />
+                <circle cx="50" cy="60" r="3" fill="var(--gold)" />
+                <polygon points="50,5 53,15 63,15 55,22 58,32 50,25 42,32 45,22 37,15 47,15" fill="var(--gold)"/>
+            </svg>
+        </div>
     </div>
+
+    <div class="scene">
+        <div class="cube" id="cube">
+            <div class="cube-face front">
+                <img src="1.jpg" alt="照片1">
+                <div class="photo-caption">这是我们第一次打视频，好搞笑</div>
+            </div>
+            <div class="cube-face back">
+                <img src="2.jpg" alt="照片2">
+                <div class="photo-caption">第一张照片，不太敢亲密的</div>
+            </div>
+            <div class="cube-face right">
+                <img src="3.jpg" alt="照片3">
+                <div class="photo-caption">第一次陪小宝吃海底捞，也是小宝第一次吃海底捞</div>
+            </div>
+            <div class="cube-face left">
+                <img src="4.jpg" alt="照片4">
+                <div class="photo-caption">第一张牵手照，嘿嘿</div>
+            </div>
+            <div class="cube-face top">
+                <img src="5.jpg" alt="照片5">
+                <div class="photo-caption">小宝私人摄影师的第一张杰作</div>
+            </div>
+            <div class="cube-face bottom">
+                <img src="6.jpg" alt="照片6">
+                <div class="photo-caption">脸红红的我不是醉了，而是爱了</div>
+            </div>
+        </div>
+
+        <div class="lyrics">
+            <h1 id="main-title">Merry Christmas</h1>
+            <p id="sub-text">一张张照片，刻下我们相爱的证据</p>
+        </div>
+    </div>
+
+    <audio id="bgm" src="bgm.mp3" loop></audio>
 
     <script>
-        // --- 1. 定义关心的话语 (你可以随意修改这里的文字) ---
-        const messages = [
-            "记得按时吃饭 🍚", "天冷加衣 🧥", "不要熬夜 🌙", "多喝热水 💧",
-            "你最可爱了 🍬", "想你每一天 📅", "累了就休息 🛌", "永远陪着你 👫",
-            "不管是晴天 ☀️", "还是下雨 🌧️", "我都在 ❤️", "别太辛苦 💪",
-            "记得吃早餐 🥛", "晚安好梦 💤", "你是我的唯一 🦄", "心情要美美哒 ✨",
-            "抱抱你 🫂", "没有什么过不去的 🌈", "我会一直宠你 🍭", "你是最棒的 👍",
-            "照顾好自己 💊", "出门注意安全 🚦", "记得想我哦 💭", "你是我的小确幸 🍀",
-            "我会努力赚钱 💰", "带你去吃好吃的 🍔", "不许皱眉 😠", "笑口常开 😄",
-            "做你的避风港 🏠", "爱你三千遍 🤟", "我的眼里只有你 👀", "未来有我 💍",
-            "不要饿肚子 🥨", "今天也很想你 🔔", "摸摸头 👋"
-        ];
+        const styleSheet = document.styleSheets[0];
+        styleSheet.insertRule(`
+            @keyframes blink { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+        `, styleSheet.cssRules.length);
 
-        // 确保消息数量足够多，不够就循环填充，为了拼成爱心需要较多数量
-        const totalPoints = 60; // 构成爱心的点数
-        let displayMessages = [];
-        while (displayMessages.length < totalPoints) {
-            displayMessages = displayMessages.concat(messages);
-        }
-        displayMessages = displayMessages.slice(0, totalPoints);
-
-
-        // --- 2. 核心逻辑 ---
-
-        function startShow() {
-            // 隐藏按钮
-            document.getElementById('startContainer').style.opacity = '0';
-            setTimeout(() => {
-                document.getElementById('startContainer').style.display = 'none';
-            }, 800);
-
-            const container = document.getElementById('messagesContainer');
-            document.getElementById('heartWrapper').style.display = 'block';
-
-            // 屏幕宽高
-            const w = window.innerWidth;
-            const h = window.innerHeight;
-
-            // 第一阶段：随机散布气泡
-            const bubbles = [];
-            displayMessages.forEach((msg, index) => {
-                const el = document.createElement('div');
-                el.classList.add('message-bubble');
-                el.innerText = msg;
-                
-                // 随机位置（稍偏离中心，避免重叠太多）
-                const randomX = (Math.random() * w * 0.8) + (w * 0.1); 
-                const randomY = (Math.random() * h * 0.8) + (h * 0.1);
-
-                el.style.left = randomX + 'px';
-                el.style.top = randomY + 'px';
-
-                // 随机延迟出现，制造“弹出”感
-                const delay = Math.random() * 2000;
-                
-                container.appendChild(el);
-                bubbles.push(el);
-
-                setTimeout(() => {
-                    el.style.opacity = '1';
-                    el.style.transform = 'scale(1)';
-                }, delay);
-            });
-
-            // 第二阶段：汇聚成爱心 (延迟3秒后开始)
-            setTimeout(() => {
-                arrangeInHeart(bubbles);
-            }, 3500);
-        }
-
-        // --- 3. 爱心形状算法 ---
-        function arrangeInHeart(elements) {
-            const count = elements.length;
-            const w = window.innerWidth;
-            const h = window.innerHeight;
-            const centerX = w / 2;
-            const centerY = h / 2;
-
-            // 根据屏幕大小调整爱心缩放比例
-            const scale = Math.min(w, h) / 35; 
-
-            elements.forEach((el, i) => {
-                // 使用爱心参数方程
-                // t 从 0 到 2*PI
-                // 为了让点分布均匀，我们按照索引分段
-                const t = (Math.PI * 2 * i) / count;
-
-                // 爱心公式
-                // x = 16 * sin(t)^3
-                // y = 13 * cos(t) - 5 * cos(2t) - 2 * cos(3t) - cos(4t)
-                const x = 16 * Math.pow(Math.sin(t), 3);
-                const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
-
-                // 转换坐标到屏幕中心
-                // 注意：网页坐标系Y轴向下，而数学坐标系Y轴向上，所以Y要取反
-                const finalX = centerX + (x * scale); 
-                const finalY = centerY - (y * scale) - (2 * scale); // 稍微向上提一点
-
-                // 添加特殊样式类
-                el.classList.add('in-heart');
-                
-                // 设置新位置
-                // 我们需要减去元素自身宽高的一半来居中
-                // 由于元素现在是absolute，并且宽高不固定，这里做一个估算修正
-                // 或者利用 transform: translate(-50%, -50%)
-                el.style.left = finalX + 'px';
-                el.style.top = finalY + 'px';
-                el.style.transform = 'translate(-50%, -50%)';
-            });
-        }
-
-
-        // --- 4. 背景特效 (Canvas 粒子) ---
-        const canvas = document.getElementById('bgCanvas');
+        const canvas = document.getElementById('snow-canvas');
         const ctx = canvas.getContext('2d');
-        let width, height;
-        let particles = [];
+        let width, height, particles = [];
 
-        function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
+        function initCanvas() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            particles = [];
+            // 生成250个粒子
+            for (let i = 0; i < 250; i++) {
+                // 20%的概率生成金色的星星，80%是白色的雪花
+                const isStar = Math.random() < 0.2; 
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    // 星星稍微大一点，雪花小一点
+                    r: isStar ? Math.random() * 3 + 2 : Math.random() * 3 + 1, 
+                    d: Math.random() * 1,
+                    type: isStar ? 'star' : 'snow',
+                    // 星星有轻微的闪烁效果参数
+                    opacity: isStar ? Math.random() : 0.8,
+                    fadeDir: Math.random() > 0.5 ? 1 : -1
+                });
+            }
         }
-        window.addEventListener('resize', resize);
-        resize();
 
-        class Particle {
-            constructor() {
-                this.reset();
-            }
-            reset() {
-                this.x = Math.random() * width;
-                this.y = height + Math.random() * 100; // 从底部下方开始
-                this.speed = 0.5 + Math.random() * 1.5;
-                this.size = 1 + Math.random() * 3;
-                this.opacity = 0.1 + Math.random() * 0.4;
-                this.color = `rgba(255, ${100 + Math.random() * 100}, ${150 + Math.random() * 105}, ${this.opacity})`;
-            }
-            update() {
-                this.y -= this.speed;
-                if (this.y < -10) {
-                    this.reset();
-                }
-            }
-            draw() {
-                ctx.fillStyle = this.color;
+        function drawParticles() {
+            ctx.clearRect(0, 0, width, height);
+            for (let p of particles) {
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                if (p.type === 'star') {
+                    // 绘制星星：金色，带闪烁
+                    ctx.fillStyle = `rgba(255, 215, 0, ${p.opacity})`; // 金色
+                    // 简单的星星形状（菱形）
+                    ctx.moveTo(p.x, p.y - p.r);
+                    ctx.lineTo(p.x + p.r, p.y);
+                    ctx.lineTo(p.x, p.y + p.r);
+                    ctx.lineTo(p.x - p.r, p.y);
+                } else {
+                    // 绘制雪花：白色半透明圆形
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2, true);
+                }
                 ctx.fill();
             }
+            updateParticles();
         }
 
-        function initParticles() {
-            for (let i = 0; i < 60; i++) {
-                particles.push(new Particle());
+        function updateParticles() {
+            for (let p of particles) {
+                // 粒子下落
+                p.y += Math.cos(p.d) + 0.5 + p.r / 3;
+                p.x += Math.sin(p.d) * 0.5;
+
+                // 如果是星星，处理闪烁
+                if (p.type === 'star') {
+                    p.opacity += p.fadeDir * 0.01;
+                    if (p.opacity >= 1 || p.opacity <= 0.4) { p.fadeDir *= -1; }
+                }
+
+                // 循环利用
+                if (p.y > height) {
+                    p.y = -10;
+                    p.x = Math.random() * width;
+                }
             }
         }
 
-        function animateBg() {
-            ctx.clearRect(0, 0, width, height);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-            requestAnimationFrame(animateBg);
+        function animate() {
+            drawParticles();
+            requestAnimationFrame(animate);
         }
 
-        initParticles();
-        animateBg();
+        function startExperience() {
+            document.getElementById('overlay').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('overlay').style.display = 'none';
+            }, 500);
+            document.getElementById('bgm').play();
+        }
 
+        window.addEventListener('resize', initCanvas);
+        initCanvas();
+        animate();
     </script>
 </body>
-
 </html>
